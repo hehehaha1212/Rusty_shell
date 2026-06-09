@@ -13,8 +13,14 @@ fn main() {
      if (command.to_lowercase() == "exit") || (command.to_lowercase()== "quit") {
         break;
      }
+     else if command.starts_with("echo "){
+         println!("{}",&command[5..]);
+     }
+     else {
+         println!("{}: command not found", command.trim());
+     }
 
-     println!("{}: command not found", command.trim());
+    
     
     }
    
