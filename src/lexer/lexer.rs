@@ -1,5 +1,6 @@
-use crate::lexer::{LexerState, Scanner, Token};
-
+use super::scanner::Scanner;
+use super::state::LexerState;
+use super::token::Token;
 // lexer state
 pub struct Lexer<'a> {
     scanner: Scanner<'a>,

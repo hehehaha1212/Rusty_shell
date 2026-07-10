@@ -1,5 +1,9 @@
-use crate::lexer::{Lexer, Token};
+use crate::executor::Executor;
+use crate::lexer::Lexer;
+use crate::parser::Parser;
+use crate::resolver::Resolver;
 use std::io::{self, Write};
+
 pub struct Shell {}
 
 impl Shell {
@@ -32,6 +36,35 @@ impl Shell {
             let tokens = lexer.lex();
 
             println!("{:#?}", tokens);
+
+            let mut parser = Parser::new(tokens);
+
+            let ast = match parser.parse() {
+                Ok(ast) => ast,
+
+                Err(err) => {
+                    println!("{}", err);
+                    continue;
+                }
+            };
+
+            println!("{:#?}", ast);
+            let resolver = Resolver::new();
+
+            let resolved = match resolver.resolve(ast) {
+                Ok(command) => command,
+                Err(err) => {
+                    eprintln!("{err}");
+                    continue;
+                }
+            };
+
+            println!("{resolved:#?}");
+            let executor = Executor::new();
+
+            if let Err(err) = executor.execute(resolved) {
+                eprintln!("{err}");
+            }
         }
     }
 }

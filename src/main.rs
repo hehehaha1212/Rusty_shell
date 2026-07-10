@@ -1,8 +1,9 @@
-#[allow(unused_imports)] // flags are written in this format #[...]
-use std::io::{self, Write};  
-
 mod shell;
+
 mod lexer;
+mod parser;
+mod resolver;
+mod executor;
 
 use shell::Shell;
 
