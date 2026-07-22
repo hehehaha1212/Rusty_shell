@@ -19,16 +19,20 @@ impl Resolver {
         }
     }
     fn resolve_simple(&self, command: SimpleCommand) -> Result<ResolvedCommand, String> {
+        
         if self.is_special_builtin(&command.command) {
+            
             return Ok(ResolvedCommand::SpecialBuiltin(CommandInvocation {
                 name: command.command,
                 args: command.args,
+                redirects: command.redirects,
             }));
         }
         if self.is_builtin(&command.command) {
             return Ok(ResolvedCommand::Builtin(CommandInvocation {
                 name: command.command,
                 args: command.args,
+                redirects: command.redirects,
             }));
         }
 
@@ -36,6 +40,7 @@ impl Resolver {
             return Ok(ResolvedCommand::Function(CommandInvocation {
                 name: command.command,
                 args: command.args,
+                redirects: command.redirects,
             }));
         }
         if command.command.starts_with('/') {
@@ -47,6 +52,7 @@ impl Resolver {
                     invocation: CommandInvocation {
                         name: command.command,
                         args: command.args,
+                        redirects: command.redirects,
                     },
                 });
             }
@@ -55,11 +61,13 @@ impl Resolver {
             let path = PathBuf::from(&command.command);
 
             if path.exists() {
+                
                 return Ok(ResolvedCommand::External {
                     path,
                     invocation: CommandInvocation {
                         name: command.command,
                         args: command.args,
+                        redirects: command.redirects,
                     },
                 });
             }
@@ -70,11 +78,11 @@ impl Resolver {
                 invocation: CommandInvocation {
                     name: command.command,
                     args: command.args,
+                    redirects: command.redirects,
                 },
             });
-        } 
-        else {
-            return Err(format!("{}: command not found",command.command));
+        } else {
+            return Err(format!("{}: command not found", command.command));
         }
     }
     fn is_special_builtin(&self, command: &str) -> bool {

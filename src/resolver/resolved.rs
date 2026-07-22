@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-
+use crate::parser::Redirect;
 #[derive(Debug,Clone)]
 pub enum ResolvedCommand {
     SpecialBuiltin(CommandInvocation),
@@ -14,4 +14,5 @@ pub enum ResolvedCommand {
 pub struct CommandInvocation {
     pub name: String,
     pub args: Vec<String>,
+    pub redirects: Vec<Redirect>,
 }

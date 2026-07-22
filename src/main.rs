@@ -4,6 +4,7 @@ mod lexer;
 mod parser;
 mod resolver;
 mod executor;
+mod state;
 
 use shell::Shell;
 

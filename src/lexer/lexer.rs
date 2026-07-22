@@ -6,7 +6,15 @@ pub struct Lexer<'a> {
     scanner: Scanner<'a>,
     state: LexerState,
     tokens: Vec<Token>,
+    current_word: String,
 }
+
+// #[derive(Debug)]
+// pub enum LexError {
+//     UnterminatedSingleQuote,
+//     UnterminatedDoubleQuote,
+//     UnexpectedCharacter(char),
+// }
 
 impl<'a> Lexer<'a> {
     pub fn new(input: &'a str) -> Self {
@@ -14,6 +22,7 @@ impl<'a> Lexer<'a> {
             scanner: Scanner::new(input),
             state: LexerState::Normal,
             tokens: Vec::new(),
+            current_word: String::new(),
         }
     }
 
@@ -22,6 +31,15 @@ impl<'a> Lexer<'a> {
             match self.state {
                 LexerState::Normal => {
                     self.lex_normal();
+                }
+                LexerState::DoubleQuote => {
+                    self.lex_double_quote();
+                }
+                LexerState::SingleQuote => {
+                    self.lex_single_quote();
+                }
+                LexerState::Escape => {
+                    self.lex_escape();
                 }
             }
         }
@@ -38,40 +56,59 @@ impl<'a> Lexer<'a> {
             c if c.is_whitespace() => {
                 self.scanner.advance();
             }
+            '"' => {
+                self.state = LexerState::DoubleQuote;
+                self.scanner.advance();
+            }
 
             '|' => {
+                self.emit_word();
                 self.tokens.push(Token::Pipe);
                 self.scanner.advance();
             }
 
             '<' => {
+                self.emit_word();
                 self.tokens.push(Token::RedirectIn);
                 self.scanner.advance();
             }
 
             '>' => {
+                self.emit_word();
                 self.tokens.push(Token::RedirectOut);
                 self.scanner.advance();
             }
 
             '&' => {
+                self.emit_word();
                 self.tokens.push(Token::Background);
                 self.scanner.advance();
             }
 
             ';' => {
+                self.emit_word();
                 self.tokens.push(Token::Semicolon);
                 self.scanner.advance();
             }
 
             '(' => {
+                self.emit_word();
                 self.tokens.push(Token::LeftParen);
                 self.scanner.advance();
             }
 
             ')' => {
+                self.emit_word();
                 self.tokens.push(Token::RightParen);
                 self.scanner.advance();
+            }
+            '\'' => {
+                self.state = LexerState::SingleQuote;
+                self.scanner.advance();
+            }
+            '\\' => {
+                self.state = LexerState::Escape;
+                self.scanner.advance(); // consume '\'
             }
 
             _ => {
@@ -81,23 +118,80 @@ impl<'a> Lexer<'a> {
     }
 
     fn lex_word(&mut self) {
-        let mut word = String::new();
-
         while let Some(c) = self.scanner.current() {
             if c.is_whitespace() {
                 break;
             }
-
             match c {
-                '|' | '<' | '>' | '&' | ';' | '(' | ')' => break,
+                '\\' => {
+                    self.scanner.advance(); // consume '\'
+
+                    if let Some(next) = self.scanner.current() {
+                        self.current_word.push(next);
+                        self.scanner.advance();
+                    }
+                }
+
+                '|' | '<' | '>' | '&' | ';' | '(' | ')' | '\'' | '"' => break,
 
                 _ => {
-                    word.push(c);
+                    self.current_word.push(c);
                     self.scanner.advance();
                 }
             }
         }
+        self.emit_word();
+    }
 
-        self.tokens.push(Token::Word(word));
+    fn lex_single_quote(&mut self) {
+        while let Some(c) = self.scanner.current() {
+            if c == '\'' {
+                self.scanner.advance();
+
+                self.state = LexerState::Normal;
+
+                self.emit_word();
+
+                return;
+            }
+
+            self.current_word.push(c);
+            self.scanner.advance();
+        }
+        self.emit_word();
+    }
+
+    fn lex_double_quote(&mut self) {
+        while let Some(c) = self.scanner.current() {
+            if c == '\"' {
+                self.scanner.advance();
+
+                self.state = LexerState::Normal;
+
+                self.emit_word();
+
+                return;
+            }
+
+            self.current_word.push(c);
+            self.scanner.advance();
+        }
+        self.emit_word();
+    }
+
+    fn lex_escape(&mut self) {
+        if let Some(c) = self.scanner.current() {
+            self.current_word.push(c);
+            self.scanner.advance();
+        }
+
+        self.state = LexerState::Normal;
+    }
+
+    fn emit_word(&mut self) {
+        if !self.current_word.is_empty() {
+            self.tokens
+                .push(Token::Word(std::mem::take(&mut self.current_word)));
+        }
     }
 }

@@ -6,9 +6,9 @@ pub enum Token {
 
     Pipe,
 
-    RedirectIn,
+    RedirectIn,         // <
 
-    RedirectOut,
+    RedirectOut,        // <
 
     Background,
 
@@ -17,6 +17,8 @@ pub enum Token {
     LeftParen,
 
     RightParen,
+
+    Ampersand,
 
     EOF,
 }
